@@ -121,7 +121,7 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
 .loi-field{width:100%;border:none;border-bottom:1px solid rgba(255,255,255,0.15);padding:0.75rem 0;font-family:var(--font-sans);font-size:14px;color:var(--warm);background:transparent;outline:none;transition:border-color 0.2s;font-weight:300;margin-bottom:1rem;display:block;}
 .loi-field:focus{border-color:rgba(212,149,138,0.6)}
 .loi-field::placeholder{color:rgba(247,242,234,0.25)}
-.intent-box{border:1px solid rgba(255,255,255,0.1);border-radius:3px;padding:1rem 1.25rem;margin:1.25rem 0;text-align:left;display:flex;gap:12px;align-items:flex-start;cursor:pointer;}
+.intent-box{border:1px solid rgba(255,255,255,0.1);border-radius:3px;padding:1rem 1.25rem;margin:1.25rem 0;text-align:left;display:flex;gap:12px;align-items:flex-start;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .intent-box input{accent-color:var(--blush);margin-top:3px;flex-shrink:0}
 .intent-label{font-size:13px;color:rgba(247,242,234,0.55);line-height:1.6}
 .intent-label strong{color:rgba(247,242,234,0.85);font-weight:400}
@@ -457,12 +457,12 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
       <div class="loi-hero-sub">Leave your details and you'll be first to know — and first to shape — what we create.</div>
       <input class="loi-field" type="text" id="loi-name" placeholder="Your first name">
       <input class="loi-field" type="email" id="loi-email" placeholder="Email address">
-      <div class="intent-box" onclick="document.getElementById('loi-intent').click()">
+      <label class="intent-box" for="loi-intent">
         <input type="checkbox" id="loi-intent">
         <div class="intent-label">
           <strong>I'd genuinely consider paying for something</strong> that addressed what we discussed today — if it worked.
         </div>
-      </div>
+      </label>
       <button class="btn-submit" onclick="submitAll()">Join the early access list</button>
     </div>
 
@@ -583,6 +583,89 @@ function restart() {
 }
 
 document.getElementById('progress-bar').style.opacity = '0';
+
+// ── ADMIN VIEWER ──
+// Tap the footer privacy text 5 times quickly to open the data viewer
+let tapCount = 0, tapTimer;
+document.addEventListener('DOMContentLoaded', () => {
+  const trigger = document.querySelector('#s-loi p');
+  if (trigger) {
+    trigger.addEventListener('click', () => {
+      tapCount++;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => tapCount = 0, 2000);
+      if (tapCount >= 5) { tapCount = 0; showAdmin(); }
+    });
+  }
+});
+
+function showAdmin() {
+  const log = JSON.parse(localStorage.getItem('blueprint-log') || '[]');
+  const panel = document.getElementById('s-admin');
+  const list  = document.getElementById('admin-list');
+
+  if (log.length === 0) {
+    list.innerHTML = '<p style="color:var(--mist);font-size:13px;text-align:center;padding:2rem 0">No submissions yet.</p>';
+  } else {
+    list.innerHTML = [...log].reverse().map((e, i) => `
+      <div style="background:white;border:1px solid var(--border);border-radius:3px;padding:1.25rem;margin-bottom:0.75rem;font-size:12px;line-height:1.8">
+        <div style="font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mist);margin-bottom:0.6rem">${new Date(e.time).toLocaleString()} · ${e.hormoneName || '—'}</div>
+        <div><strong>Name:</strong> ${e.name || '—'} &nbsp;|&nbsp; <strong>Email:</strong> ${e.email || '—'} &nbsp;|&nbsp; <strong>Intent:</strong> ${e.intent ? '✓ Yes' : 'No'}</div>
+        <div><strong>Device:</strong> ${e.device || '—'}</div>
+        <div><strong>Appetite:</strong> ${(e.appetite||[]).join(', ') || '—'}</div>
+        <div><strong>Optimising:</strong> ${e.optimising || '—'}</div>
+        <div><strong>Context chips:</strong> ${(e.context||[]).join(', ') || '—'}</div>
+        <div><strong>Context notes:</strong> ${e.contextText || '—'}</div>
+        <div><strong>Clinical:</strong> ${e.clinical || '—'}</div>
+      </div>`).join('');
+  }
+
+  document.getElementById('admin-count').textContent = log.length + ' submission' + (log.length !== 1 ? 's' : '');
+  go('s-admin');
+}
+
+function exportCSV() {
+  const log = JSON.parse(localStorage.getItem('blueprint-log') || '[]');
+  if (!log.length) return;
+  const headers = ['time','name','email','intent','hormone','device','appetite','optimising','context','contextText','clinical'];
+  const rows = log.map(e => headers.map(h => {
+    const v = Array.isArray(e[h]) ? e[h].join(' | ') : (e[h] ?? '');
+    return '"' + String(v).replace(/"/g,'""') + '"';
+  }).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'blueprint-responses-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+function clearAdmin() {
+  if (confirm('Delete all saved responses? This cannot be undone.')) {
+    localStorage.removeItem('blueprint-log');
+    showAdmin();
+  }
+}
 </script>
+
+<!-- ════════════════════════════════════
+     SCREEN 6 · ADMIN VIEWER (hidden)
+════════════════════════════════════ -->
+<div class="screen" id="s-admin" style="background:var(--warm);padding-top:2.5rem">
+  <div class="scroll-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:1.5rem">
+      <div>
+        <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:400">Responses</div>
+        <div style="font-size:11px;color:var(--mist);margin-top:2px" id="admin-count">—</div>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-ghost" style="font-size:11px;padding:0.5rem 1rem" onclick="exportCSV()">Export CSV</button>
+        <button class="btn btn-ghost" style="font-size:11px;padding:0.5rem 1rem;color:#c0392b" onclick="clearAdmin()">Clear</button>
+        <button class="btn btn-dark" style="font-size:11px;padding:0.5rem 1rem" onclick="go('s-welcome')">Close</button>
+      </div>
+    </div>
+    <div id="admin-list" style="width:100%"></div>
+  </div>
+</div>
+
 </body>
 </html>
