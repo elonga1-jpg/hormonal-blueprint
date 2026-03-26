@@ -488,19 +488,30 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
 
 <script>
 // ══════════════════════════════════════════════════
-//  CONFIG — replace these URLs before your event
+//  GOOGLE FORM CONFIG
 // ══════════════════════════════════════════════════
-const NOTION_URL = 'https://YOUR_NOTION_FORM_URL_HERE';
-const SHEETS_URL = 'https://YOUR_GOOGLE_FORM_URL_HERE';
-const USE_SHEETS = true;
+const FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSeZPJwXDLD7WsKNClKM_6I7CQDW2uRQJ4mcdVWniH9_VAB3kA/formResponse';
+const FIELDS = {
+  name:        'entry.1084751225',
+  email:       'entry.448229738',
+  hormone:     'entry.1188618265',
+  intent:      'entry.1630375945',
+  appetite:    'entry.699885414',
+  optimising:  'entry.1338450899',
+  context:     'entry.882118119',
+  contextText: 'entry.2052226709',
+  clinical:    'entry.590806347',
+  device:      'entry.250294453',
+  time:        'entry.1005031548'
+};
 // ══════════════════════════════════════════════════
 
 const SCREENS  = ['s-welcome','s-hormones','s-discovery','s-loi','s-success'];
 const PROGRESS = [0, 25, 55, 80, 100];
 
 let state = {
-  hormone:'', q1:'', symptoms:[], q3:'', q4:'',
-  impact:5, device:'', name:'', email:'', intent:false
+  hormone:'', appetite:[], optimising:'', context:[],
+  contextText:'', clinical:'', device:'', name:'', email:'', intent:false
 };
 
 function go(id) {
@@ -540,6 +551,36 @@ function getChips(groupId) {
   return Array.from(document.querySelectorAll('#' + groupId + ' .chip.on')).map(c => c.textContent.trim());
 }
 
+async function submitToGoogleForm(s) {
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+
+  const body = new URLSearchParams({
+    [FIELDS.name]:        s.name,
+    [FIELDS.email]:       s.email,
+    [FIELDS.hormone]:     s.hormoneName,
+    [FIELDS.intent]:      s.intent ? 'Yes' : 'No',
+    [FIELDS.appetite]:    s.appetite.join(' | '),
+    [FIELDS.optimising]:  s.optimising,
+    [FIELDS.context]:     s.context.join(' | '),
+    [FIELDS.contextText]: s.contextText,
+    [FIELDS.clinical]:    s.clinical,
+    [FIELDS.device]:      s.device,
+    [FIELDS.time]:        timeStr
+  });
+
+  try {
+    await fetch(FORM_BASE, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+  } catch(e) {
+    console.log('Form submit error:', e);
+  }
+}
+
 function submitAll() {
   const email = document.getElementById('loi-email').value.trim();
   const name  = document.getElementById('loi-name').value.trim();
@@ -548,6 +589,7 @@ function submitAll() {
     document.getElementById('loi-email').focus();
     return;
   }
+
   state.appetite    = getChips('chips-appetite');
   state.optimising  = document.getElementById('q2').value.trim();
   state.context     = getChips('chips-context');
@@ -560,12 +602,13 @@ function submitAll() {
   state.time        = new Date().toISOString();
   state.hormoneName = {prog:'Progesterone',est:'Estrogen',andr:'Androgens',cort:'Cortisol'}[state.hormone] || '';
 
+  // Save locally as backup
   const log = JSON.parse(localStorage.getItem('blueprint-log') || '[]');
   log.push(state);
   localStorage.setItem('blueprint-log', JSON.stringify(log));
 
-  const dest = USE_SHEETS ? SHEETS_URL : NOTION_URL;
-  if (dest && !dest.includes('YOUR_')) { window.open(dest, '_blank'); }
+  // Submit silently to Google Forms in background
+  submitToGoogleForm(state);
 
   go('s-success');
 }
