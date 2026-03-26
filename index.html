@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hormonal Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:#1A1714;
+  --warm:#F7F2EA;
+  --parchment:#EDE6D6;
+  --blush:#D4958A;
+  --blush-light:rgba(212,149,138,0.12);
+  --blush-mid:rgba(212,149,138,0.25);
+  --sage:#8FAF9F;
+  --sage-light:rgba(143,175,159,0.12);
+  --gold:#BF9B6F;
+  --gold-light:rgba(191,155,111,0.12);
+  --mist:#9A9490;
+  --border:rgba(26,23,20,0.1);
+  --font-serif:'Playfair Display',Georgia,serif;
+  --font-sans:'Jost',sans-serif;
+}
+
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font-sans);background:var(--warm);color:var(--ink);font-size:15px;font-weight:300;}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity 0.45s ease;padding:2.5rem 1.5rem 3rem;}
+.screen.show{opacity:1;pointer-events:auto}
+
+.progress{position:fixed;top:0;left:0;right:0;height:2px;background:var(--border);z-index:100;transition:opacity 0.3s;}
+.progress-fill{height:100%;background:var(--blush);transition:width 0.5s ease}
+
+.step-label{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mist);margin-bottom:2.5rem;text-align:center;}
+
+.display{font-family:var(--font-serif);font-size:clamp(2rem,5vw,2.8rem);font-weight:400;line-height:1.2;margin-bottom:0.75rem;}
+.display em{font-style:italic;color:var(--blush)}
+.body-text{font-size:14px;line-height:1.8;color:var(--mist);max-width:480px;margin:0 auto}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-sans);font-size:13px;font-weight:400;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;border:none;outline:none;text-transform:uppercase;}
+.btn-dark{background:var(--ink);color:var(--warm);padding:1rem 2.25rem;border-radius:2px;}
+.btn-dark:hover{background:#3a3330}
+.btn-ghost{background:transparent;color:var(--mist);padding:0.75rem 1.5rem;border:1px solid var(--border);border-radius:2px;}
+.btn-ghost:hover{border-color:var(--mist);color:var(--ink)}
+.btn-row{display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
+
+.hormone-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;width:100%;max-width:520px;margin-bottom:1.5rem;}
+.h-card{border:1px solid var(--border);border-radius:3px;padding:1.25rem;cursor:pointer;transition:all 0.2s;background:white;text-align:left;position:relative;overflow:hidden;}
+.h-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:all 0.2s;}
+.h-prog::before{background:var(--blush)}
+.h-est::before{background:var(--sage)}
+.h-andr::before{background:var(--gold)}
+.h-cort::before{background:#A0AEC0}
+.h-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+.h-card.sel{border-color:transparent;box-shadow:0 0 0 2px var(--blush)}
+.h-card.sel.sage-sel{box-shadow:0 0 0 2px var(--sage)}
+.h-card.sel.gold-sel{box-shadow:0 0 0 2px var(--gold)}
+.h-name{font-family:var(--font-serif);font-size:1rem;font-weight:500;margin-bottom:0.25rem}
+.h-role{font-size:11px;color:var(--mist);line-height:1.5}
+.signal-chips{display:flex;flex-direction:column;gap:5px}
+.sig-chip{font-size:10px;padding:4px 8px;border-radius:3px;line-height:1.4;font-weight:400}
+.sig-temp{background:rgba(212,149,138,0.12);color:#8B4E47}
+.sig-hrv{background:rgba(143,175,159,0.12);color:#3A6B5A}
+.sig-strain{background:rgba(191,155,111,0.12);color:#7A5C2A}
+
+.interp-panel{width:100%;max-width:520px;background:var(--ink);color:var(--warm);border-radius:3px;padding:2rem;margin-bottom:1.5rem;display:none;}
+.interp-panel.show{display:block;animation:fadeup 0.3s ease}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.interp-hormone{font-family:var(--font-serif);font-size:1.4rem;font-style:italic;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+.interp-row{display:flex;gap:0.75rem;margin-bottom:0.75rem;align-items:flex-start}
+.interp-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:500;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);margin-top:2px;}
+.interp-text{font-size:13px;line-height:1.7;color:rgba(247,242,234,0.75)}
+.interp-text strong{color:var(--warm);font-weight:400}
+
+.action-block{
+  margin-top:1.25rem;padding-top:1.1rem;
+  border-top:1px solid rgba(255,255,255,0.1);
+  display:flex;flex-direction:column;gap:0.6rem;
+}
+.action-label{
+  font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+  color:rgba(247,242,234,0.35);margin-bottom:0.15rem;
+}
+.action-row{
+  font-size:12px;line-height:1.65;color:rgba(247,242,234,0.7);
+  display:flex;align-items:flex-start;gap:8px;
+}
+.action-tag{
+  font-size:9px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;flex-shrink:0;margin-top:1px;
+}
+.action-tag.workout{background:rgba(143,175,159,0.2);color:#8FAF9F}
+.action-tag.skin{background:rgba(212,149,138,0.2);color:#D4958A}
+
+.chip-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-top:0.6rem}
+.chip{padding:7px 16px;border:1px solid var(--border);border-radius:60px;font-family:var(--font-sans);font-size:12px;color:var(--mist);cursor:pointer;transition:all 0.15s;background:transparent;font-weight:400;letter-spacing:0.02em;}
+.chip:hover{border-color:var(--blush);color:var(--blush)}
+.chip.on{background:var(--blush-light);border-color:var(--blush);color:var(--ink)}
+
+.field{width:100%;border:none;border-bottom:1px solid var(--border);padding:0.75rem 0;font-family:var(--font-sans);font-size:14px;color:var(--ink);background:transparent;outline:none;transition:border-color 0.2s;font-weight:300;}
+.field:focus{border-color:var(--ink)}
+.field::placeholder{color:rgba(154,148,144,0.6)}
+
+.q-block{width:100%;max-width:520px;background:white;border:1px solid var(--border);border-radius:3px;padding:1.5rem;margin-bottom:0.75rem;}
+.q-num{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--blush);margin-bottom:0.5rem;display:block;}
+.q-text{font-family:var(--font-serif);font-size:1.05rem;font-weight:400;margin-bottom:0.5rem;line-height:1.4}
+.q-hint{font-size:12px;color:var(--mist);line-height:1.6}
+
+.scale-wrap{margin-top:0.75rem}
+.scale-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--mist);margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer;background:var(--border);border-radius:2px;}
+.scale-val{text-align:center;font-family:var(--font-serif);font-size:1.5rem;margin-top:8px;color:var(--ink);}
+
+.loi-hero{width:100%;max-width:520px;background:var(--ink);border-radius:3px;padding:2.5rem 2rem;text-align:center;margin-bottom:1rem;}
+.loi-hero-title{font-family:var(--font-serif);font-size:1.6rem;color:var(--warm);margin-bottom:0.5rem;font-weight:400;}
+.loi-hero-title em{font-style:italic;color:var(--blush)}
+.loi-hero-sub{font-size:13px;color:rgba(247,242,234,0.5);line-height:1.7;margin-bottom:2rem}
+.loi-field{width:100%;border:none;border-bottom:1px solid rgba(255,255,255,0.15);padding:0.75rem 0;font-family:var(--font-sans);font-size:14px;color:var(--warm);background:transparent;outline:none;transition:border-color 0.2s;font-weight:300;margin-bottom:1rem;display:block;}
+.loi-field:focus{border-color:rgba(212,149,138,0.6)}
+.loi-field::placeholder{color:rgba(247,242,234,0.25)}
+.intent-box{border:1px solid rgba(255,255,255,0.1);border-radius:3px;padding:1rem 1.25rem;margin:1.25rem 0;text-align:left;display:flex;gap:12px;align-items:flex-start;cursor:pointer;}
+.intent-box input{accent-color:var(--blush);margin-top:3px;flex-shrink:0}
+.intent-label{font-size:13px;color:rgba(247,242,234,0.55);line-height:1.6}
+.intent-label strong{color:rgba(247,242,234,0.85);font-weight:400}
+.btn-submit{width:100%;background:var(--blush);color:white;border:none;border-radius:2px;padding:1rem;font-family:var(--font-sans);font-size:13px;font-weight:400;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s;}
+.btn-submit:hover{background:#c47e73}
+
+#s-success{justify-content:center;text-align:center}
+.success-mark{width:56px;height:56px;border-radius:50%;border:1px solid var(--blush);display:flex;align-items:center;justify-content:center;margin:0 auto 2rem;font-size:18px;color:var(--blush);}
+
+/* ── WELCOME — dark, wearable-first ── */
+#s-welcome{
+  background:var(--ink);
+  justify-content:center;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+#s-welcome::before{
+  content:'';position:absolute;top:-40%;left:-20%;width:140%;height:140%;
+  background:radial-gradient(ellipse at 60% 40%,rgba(212,149,138,0.15) 0%,transparent 60%),
+              radial-gradient(ellipse at 20% 80%,rgba(143,175,159,0.12) 0%,transparent 50%);
+  pointer-events:none;
+}
+.welcome-inner{position:relative;z-index:1;max-width:520px;}
+.orb-group{display:flex;justify-content:center;gap:1.5rem;margin-bottom:2.75rem;}
+.orb{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;}
+.orb-temp{background:rgba(212,149,138,0.2);color:var(--blush);border:1px solid rgba(212,149,138,0.3)}
+.orb-hrv{background:rgba(143,175,159,0.2);color:var(--sage);border:1px solid rgba(143,175,159,0.3)}
+.orb-strain{background:rgba(191,155,111,0.2);color:var(--gold);border:1px solid rgba(191,155,111,0.3)}
+.welcome-eyebrow{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:rgba(247,242,234,0.35);margin-bottom:1.75rem;}
+.welcome-title{font-family:var(--font-serif);font-size:clamp(2.4rem,6vw,3.4rem);font-weight:400;color:var(--warm);line-height:1.2;margin-bottom:0;}
+.welcome-title em{font-style:italic;color:var(--blush)}
+.welcome-rule{width:36px;height:1px;background:var(--blush);margin:1.75rem auto;}
+.welcome-sub{font-size:14px;color:rgba(247,242,234,0.5);line-height:1.75;margin-bottom:2.5rem;font-weight:300;max-width:400px;margin-left:auto;margin-right:auto;}
+.btn-welcome{background:var(--blush);color:white;border:none;border-radius:2px;padding:1rem 2.5rem;font-family:var(--font-sans);font-size:13px;font-weight:400;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.2s;}
+.btn-welcome:hover{background:#c47e73}
+.devices-note{margin-top:1.5rem;font-size:11px;color:rgba(247,242,234,0.25);letter-spacing:0.06em;}
+
+@keyframes fadein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.animate{animation:fadein 0.5s ease both}
+.d1{animation-delay:0.05s}.d2{animation-delay:0.15s}.d3{animation-delay:0.25s}.d4{animation-delay:0.35s}
+
+.scroll-inner{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress-bar">
+  <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 1 · WELCOME
+════════════════════════════════════ -->
+<div class="screen show" id="s-welcome">
+  <div class="welcome-inner">
+    <div class="orb-group animate d1">
+      <div class="orb orb-temp">Temp</div>
+      <div class="orb orb-hrv">HRV</div>
+      <div class="orb orb-strain">Strain</div>
+    </div>
+    <div class="welcome-eyebrow animate d1">Hormonal Blueprint</div>
+    <h1 class="welcome-title animate d2">Your wearable<br>sees the data.<br>We'll show you<br>what it <em>means.</em></h1>
+    <div class="welcome-rule animate d3"></div>
+    <p class="welcome-sub animate d3">Your ring, watch, or band is picking up hormonal signals every night. Bring it over and we'll decode what your temperature, HRV, and strain are actually telling you about your cycle.</p>
+    <button class="btn-welcome animate d4" onclick="go('s-hormones')">Begin ↓</button>
+    <p class="devices-note animate d4">Oura · Apple Watch · Whoop · Garmin · or no device</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 2 · HORMONE EDUCATION + SELECTION
+════════════════════════════════════ -->
+<div class="screen" id="s-hormones">
+  <div class="scroll-inner">
+    <div class="step-label">Step 1 — Your hormonal landscape</div>
+    <h2 class="display" style="text-align:center">Which feels most<br>like <em>you right now?</em></h2>
+    <p class="body-text" style="margin-bottom:2rem;text-align:center">Select the hormone pattern that resonates. We'll decode what it's doing in your body — and what your wearable is actually picking up.</p>
+
+    <div class="hormone-grid">
+
+      <!-- PROGESTERONE CARD -->
+      <div class="h-card h-prog" onclick="selectHormone(this,'prog')">
+        <div class="h-name">Progesterone</div>
+        <div class="h-role" style="margin-bottom:0.75rem">Low or dropping — luteal phase</div>
+        <div class="signal-chips">
+          <div class="sig-chip sig-temp">🌡 Temp +0.3–0.6°C</div>
+          <div class="sig-chip sig-hrv">💓 HRV drops day 20–27</div>
+          <div class="sig-chip sig-strain">⚡ Recovery scores fall</div>
+        </div>
+      </div>
+
+      <!-- ESTROGEN CARD -->
+      <div class="h-card h-est" onclick="selectHormone(this,'est')">
+        <div class="h-name">Estrogen</div>
+        <div class="h-role" style="margin-bottom:0.75rem">High or poorly cleared</div>
+        <div class="signal-chips">
+          <div class="sig-chip sig-temp">🌡 Temp dips then spikes mid-cycle</div>
+          <div class="sig-chip sig-hrv">💓 HRV peaks follicular, crashes luteal</div>
+          <div class="sig-chip sig-strain">⚡ High strain tolerance early cycle</div>
+        </div>
+      </div>
+
+      <!-- ANDROGENS CARD -->
+      <div class="h-card h-andr" onclick="selectHormone(this,'andr')">
+        <div class="h-name">Androgens</div>
+        <div class="h-role" style="margin-bottom:0.75rem">Elevated — often PCOS pattern</div>
+        <div class="signal-chips">
+          <div class="sig-chip sig-temp">🌡 No clear temp rise after ovulation</div>
+          <div class="sig-chip sig-hrv">💓 HRV erratic, no cyclical pattern</div>
+          <div class="sig-chip sig-strain">⚡ Activity feels hard, output inconsistent</div>
+        </div>
+      </div>
+
+      <!-- CORTISOL CARD -->
+      <div class="h-card h-cort" onclick="selectHormone(this,'cort')">
+        <div class="h-name">Cortisol</div>
+        <div class="h-role" style="margin-bottom:0.75rem">Chronically elevated or dysregulated</div>
+        <div class="signal-chips">
+          <div class="sig-chip sig-temp">🌡 Temp elevated, no clean wave</div>
+          <div class="sig-chip sig-hrv">💓 HRV persistently low all cycle</div>
+          <div class="sig-chip sig-strain">⚡ Active minutes elevated even on rest days</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── PROGESTERONE PANEL ── -->
+    <div class="interp-panel" id="interp-prog">
+      <div class="interp-hormone">Progesterone — the luteal hormone</div>
+      <div class="interp-row">
+        <div class="interp-icon">🌡</div>
+        <div class="interp-text"><strong>Temperature:</strong> Progesterone is thermogenic — it raises core temperature by 0.3–0.6°C after ovulation. A sharp, sustained rise on your device confirms ovulation happened. A flat or noisy curve suggests it may not have.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">💓</div>
+        <div class="interp-text"><strong>HRV:</strong> Progesterone pushes the nervous system into sympathetic mode, suppressing HRV. The WHOOP 45,000-cycle study shows HRV naturally hits its lowest around day 27. A low score pre-period is progesterone working — not a problem.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">⚡</div>
+        <div class="interp-text"><strong>Activity:</strong> Your body redirects energy inward during the luteal phase. The same workout that felt easy two weeks ago now costs more — your steps, active minutes, or activity score reflect a body that has less to give, not one that is failing.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">◎</div>
+        <div class="interp-text"><strong>Skin:</strong> As progesterone rises, sebum production increases. If your skin breaks out in the same week each cycle, this is the driver — especially if it's oily at the T-zone and congested around the chin.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-label">Your actions</div>
+        <div class="action-row"><span class="action-tag workout">Workout</span> Swap high-intensity for strength or yoga this week. Your muscles still respond well to resistance — just skip the cardio spikes.</div>
+        <div class="action-row"><span class="action-tag skin">Skin</span> Use a salicylic acid cleanser 2–3x this week. Keep moisturiser light and non-comedogenic. Don't skip SPF — progesterone makes skin more photosensitive.</div>
+      </div>
+    </div>
+
+    <!-- ── ESTROGEN PANEL ── -->
+    <div class="interp-panel" id="interp-est">
+      <div class="interp-hormone">Estrogen — the follicular architect</div>
+      <div class="interp-row">
+        <div class="interp-icon">🌡</div>
+        <div class="interp-text"><strong>Temperature:</strong> Estrogen keeps temperature low and stable in the first half of your cycle. A sharp dip just before ovulation is the estrogen surge triggering the LH peak. If that post-ovulatory rise is blunted, estrogen may be outpacing progesterone.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">💓</div>
+        <div class="interp-text"><strong>HRV:</strong> Estrogen enhances parasympathetic tone — HRV is naturally highest in the follicular phase. If yours crashes hard in the luteal phase (not just dips), estrogen dominance relative to progesterone is likely the driver of that PMS pattern.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">⚡</div>
+        <div class="interp-text"><strong>Activity:</strong> The follicular phase is your performance window. Estrogen improves glycogen use and muscle repair, so your step count, active calories, or activity scores tend to be higher here — and you recover faster between sessions.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">◎</div>
+        <div class="interp-text"><strong>Skin:</strong> Estrogen stimulates collagen and hydration — skin peaks at ovulation. When estrogen is poorly cleared it triggers histamine and inflammation, causing cyclical puffiness, sensitivity, and breakouts in the same phase each month.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-label">Your actions</div>
+        <div class="action-row"><span class="action-tag workout">Workout</span> This is your window for HIIT, heavy lifts, or PBs. Push harder now — your body is primed for it and will recover well.</div>
+        <div class="action-row"><span class="action-tag skin">Skin</span> Support clearance: eat cruciferous vegetables daily, limit alcohol, and prioritise fibre. Topically, a vitamin C serum works best now — estrogen makes your skin more receptive to brightening actives.</div>
+      </div>
+    </div>
+
+    <!-- ── ANDROGENS PANEL ── -->
+    <div class="interp-panel" id="interp-andr">
+      <div class="interp-hormone">Androgens — the PCOS signal</div>
+      <div class="interp-row">
+        <div class="interp-icon">🌡</div>
+        <div class="interp-text"><strong>Temperature:</strong> The clearest wearable sign of androgen excess is no biphasic temperature shift — the curve stays flat or noisy all month. Without ovulation there is no progesterone surge, so the expected post-ovulatory temperature rise never happens.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">💓</div>
+        <div class="interp-text"><strong>HRV:</strong> Elevated androgens and insulin resistance increase resting sympathetic activity, chronically suppressing HRV. Unlike other hormonal patterns, this doesn't follow a cycle — it's persistently blunted regardless of phase.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">⚡</div>
+        <div class="interp-text"><strong>Activity:</strong> Insulin resistance means your cells don't use glucose efficiently — energy crashes after meals, inconsistent output day to day, and activity that feels disproportionately hard. Your steps or active minutes may be lower than expected for the effort you're putting in.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">◎</div>
+        <div class="interp-text"><strong>Skin & hair:</strong> Testosterone and DHT drive excess sebum, cystic jawline acne, and scalp hair thinning. These are direct readouts of androgen receptor activity — not hygiene or diet failures in isolation.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-label">Your actions</div>
+        <div class="action-row"><span class="action-tag workout">Workout</span> Prioritise strength training — it improves insulin sensitivity more than cardio alone. Walk after meals to blunt glucose spikes. Consistent moderate activity beats occasional intense sessions.</div>
+        <div class="action-row"><span class="action-tag skin">Skin</span> Use a gentle salicylic or niacinamide cleanser for sebum control. Avoid heavy occlusives. Internally, spearmint tea (2 cups daily) has evidence for reducing androgens. Zinc is worth adding for DHT.</div>
+      </div>
+    </div>
+
+    <!-- ── CORTISOL PANEL ── -->
+    <div class="interp-panel" id="interp-cort">
+      <div class="interp-hormone">Cortisol — the cycle disruptor</div>
+      <div class="interp-row">
+        <div class="interp-icon">🌡</div>
+        <div class="interp-text"><strong>Temperature:</strong> Chronic cortisol blunts overnight thermoregulation — your body can't cool down properly, disrupting deep sleep and keeping temperature elevated. On a wearable this appears as a consistently elevated deviation with no clean cyclical wave.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">💓</div>
+        <div class="interp-text"><strong>HRV:</strong> Cortisol is the most direct HRV suppressor. Unlike progesterone's predictable mid-cycle dip, cortisol-driven suppression is persistent across all phases and doesn't improve with rest days alone — resting heart rate stays elevated too.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">⚡</div>
+        <div class="interp-text"><strong>Activity:</strong> When cortisol is chronically high, even moderate activity days can show elevated output on your device because your baseline stress state is high. Your body is already working hard before you've moved — the activity cost compounds on top of that.</div>
+      </div>
+      <div class="interp-row">
+        <div class="interp-icon">◎</div>
+        <div class="interp-text"><strong>Skin:</strong> Cortisol increases sebum, breaks down collagen, and triggers inflammation — oily, dull, and reactive skin that doesn't respond well to actives. It also drives central fat storage and sugar cravings, which loop back to worsen skin.</div>
+      </div>
+      <div class="action-block">
+        <div class="action-label">Your actions</div>
+        <div class="action-row"><span class="action-tag workout">Workout</span> Cap intense sessions at 45 minutes and eat within 30 minutes after. Skip the fasted morning workout this week — cortisol is already high on waking. Walk instead.</div>
+        <div class="action-row"><span class="action-tag skin">Skin</span> Focus on barrier repair: ceramide moisturiser, no harsh actives right now. Internally, prioritise sleep and eat regularly — no skipping meals. Ashwagandha (KSM-66) has strong evidence for reducing cortisol if you want a supplement.</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="go('s-welcome')">Back</button>
+      <button class="btn btn-dark" id="btn-h-next" style="opacity:0.35;pointer-events:none" onclick="go('s-discovery')">This resonates →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 3 · DISCOVERY
+════════════════════════════════════ -->
+<div class="screen" id="s-discovery">
+  <div class="scroll-inner">
+    <div class="step-label">Step 2 — Five quick questions</div>
+    <h2 class="display" style="text-align:center">A few questions<br>to go <em>deeper.</em></h2>
+    <p class="body-text" style="margin-bottom:2rem;text-align:center">No right answers. Your honesty is what helps us understand what actually matters.</p>
+
+    <div class="q-block">
+      <span class="q-num">Question 01</span>
+      <div class="q-text">If you could get real clarity on what's happening hormonally — how far would you go to get it?</div>
+      <div class="q-hint">Select everything you'd genuinely consider.</div>
+      <div class="chip-wrap" id="chips-appetite">
+        <button class="chip" onclick="toggleChip(this)">A hormone test or blood panel</button>
+        <button class="chip" onclick="toggleChip(this)">A consultation with a specialist</button>
+        <button class="chip" onclick="toggleChip(this)">A wearable that tracks progesterone directly</button>
+        <button class="chip" onclick="toggleChip(this)">A continuous hormone monitor (like a CGM but for hormones)</button>
+        <button class="chip" onclick="toggleChip(this)">An app that interprets my wearable data hormonally</button>
+        <button class="chip" onclick="toggleChip(this)">A personalised plan for my workouts and skin based on my cycle</button>
+        <button class="chip" onclick="toggleChip(this)">Ongoing clinical support if something was found</button>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <span class="q-num">Question 02</span>
+      <div class="q-text">What are you trying to optimise through understanding your hormones better?</div>
+      <div class="q-hint">Start with what matters most to you — workouts, skin, energy, sleep, cycle, mood, or something else entirely.</div>
+      <textarea class="field" id="q2" rows="3" placeholder="e.g. Trying to train smarter around my cycle and stop crashing in the second half of the month. Also want to understand why my skin flares up predictably and what's actually driving it..." style="resize:none;margin-top:1rem;width:100%"></textarea>
+    </div>
+
+    <div class="q-block">
+      <span class="q-num">Question 03</span>
+      <div class="q-text">Hormones don't exist in a vacuum — they're shaped by everything from medications to conditions to lifestyle. Is there anything in your life that you think is influencing yours?</div>
+      <div class="q-hint">Select anything that applies, then add detail below if you'd like.</div>
+      <div class="chip-wrap" id="chips-context" style="margin-bottom:0.85rem">
+        <button class="chip" onclick="toggleChip(this)">On the contraceptive pill</button>
+        <button class="chip" onclick="toggleChip(this)">Coming off the pill</button>
+        <button class="chip" onclick="toggleChip(this)">Taking hormone therapy (HRT)</button>
+        <button class="chip" onclick="toggleChip(this)">Taking metformin or insulin sensitisers</button>
+        <button class="chip" onclick="toggleChip(this)">Taking thyroid medication</button>
+        <button class="chip" onclick="toggleChip(this)">Diagnosed with PCOS</button>
+        <button class="chip" onclick="toggleChip(this)">Diagnosed with endometriosis</button>
+        <button class="chip" onclick="toggleChip(this)">Suspected hormonal condition — not yet confirmed</button>
+        <button class="chip" onclick="toggleChip(this)">High stress or burnout</button>
+        <button class="chip" onclick="toggleChip(this)">Significant training load</button>
+        <button class="chip" onclick="toggleChip(this)">History of disordered eating</button>
+        <button class="chip" onclick="toggleChip(this)">Perimenopause or menopause</button>
+        <button class="chip" onclick="toggleChip(this)">Nothing diagnosed — just feel something is off</button>
+      </div>
+      <textarea class="field" id="q3" rows="2" placeholder="Anything else worth adding — other medications, conditions, treatments, or context..." style="resize:none;width:100%"></textarea>
+    </div>
+
+    <div class="q-block">
+      <span class="q-num">Question 04</span>
+      <div class="q-text">If it turned out there was an underlying hormonal condition driving what you're experiencing — would you want to know, and would you be open to clinical support?</div>
+      <div class="chip-wrap" id="chips-clinical">
+        <button class="chip" onclick="selectOne(this,'chips-clinical')">Yes — I'd want to know and would pursue it</button>
+        <button class="chip" onclick="selectOne(this,'chips-clinical')">Yes — but I'd want it to feel accessible, not medical</button>
+        <button class="chip" onclick="selectOne(this,'chips-clinical')">Maybe — depends on what it involved</button>
+        <button class="chip" onclick="selectOne(this,'chips-clinical')">I already have a diagnosis and want better management</button>
+        <button class="chip" onclick="selectOne(this,'chips-clinical')">I'd prefer to manage it myself without clinical involvement</button>
+      </div>
+    </div>
+
+    <div class="q-block">
+      <span class="q-num">Question 05</span>
+      <div class="q-text">Which device are you wearing?</div>
+      <div class="chip-wrap" id="chips-device">
+        <button class="chip" onclick="selectOne(this,'chips-device')">Oura Ring</button>
+        <button class="chip" onclick="selectOne(this,'chips-device')">Apple Watch</button>
+        <button class="chip" onclick="selectOne(this,'chips-device')">Whoop</button>
+        <button class="chip" onclick="selectOne(this,'chips-device')">Garmin</button>
+        <button class="chip" onclick="selectOne(this,'chips-device')">Fitbit</button>
+        <button class="chip" onclick="selectOne(this,'chips-device')">None</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="go('s-hormones')">Back</button>
+      <button class="btn btn-dark" onclick="go('s-loi')">Almost there →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 4 · LOI CAPTURE
+════════════════════════════════════ -->
+<div class="screen" id="s-loi">
+  <div class="scroll-inner">
+    <div class="step-label">Step 3 — Stay connected</div>
+
+    <div class="loi-hero">
+      <div class="loi-hero-title">We're building something<br>for <em>exactly this.</em></div>
+      <div class="loi-hero-sub">Leave your details and you'll be first to know — and first to shape — what we create.</div>
+      <input class="loi-field" type="text" id="loi-name" placeholder="Your first name">
+      <input class="loi-field" type="email" id="loi-email" placeholder="Email address">
+      <div class="intent-box" onclick="document.getElementById('loi-intent').click()">
+        <input type="checkbox" id="loi-intent">
+        <div class="intent-label">
+          <strong>I'd genuinely consider paying for something</strong> that addressed what we discussed today — if it worked.
+        </div>
+      </div>
+      <button class="btn-submit" onclick="submitAll()">Join the early access list</button>
+    </div>
+
+    <p style="font-size:11px;color:var(--mist);text-align:center;line-height:1.6">Your details will only be used to follow up about this project. No spam, ever.</p>
+    <div class="btn-row" style="margin-top:1rem">
+      <button class="btn btn-ghost" onclick="go('s-discovery')">Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 5 · SUCCESS
+════════════════════════════════════ -->
+<div class="screen" id="s-success">
+  <div class="success-mark">✓</div>
+  <h2 class="display" style="text-align:center">Thank you,<br><em>you're on the list.</em></h2>
+  <div style="width:40px;height:1px;background:var(--blush);margin:1.5rem auto"></div>
+  <p class="body-text" style="text-align:center">We'll be in touch when we have something worth showing you. Your answers are helping us build this in the right direction.</p>
+  <div class="btn-row" style="margin-top:2.5rem">
+    <button class="btn btn-dark" onclick="restart()">Start a new blueprint</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONFIG — replace these URLs before your event
+// ══════════════════════════════════════════════════
+const NOTION_URL = 'https://YOUR_NOTION_FORM_URL_HERE';
+const SHEETS_URL = 'https://YOUR_GOOGLE_FORM_URL_HERE';
+const USE_SHEETS = true;
+// ══════════════════════════════════════════════════
+
+const SCREENS  = ['s-welcome','s-hormones','s-discovery','s-loi','s-success'];
+const PROGRESS = [0, 25, 55, 80, 100];
+
+let state = {
+  hormone:'', q1:'', symptoms:[], q3:'', q4:'',
+  impact:5, device:'', name:'', email:'', intent:false
+};
+
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  const el = document.getElementById(id);
+  el.classList.add('show');
+  el.scrollTop = 0;
+  const idx = SCREENS.indexOf(id);
+  document.getElementById('progress-fill').style.width = PROGRESS[idx] + '%';
+  document.getElementById('progress-bar').style.opacity = (id === 's-welcome') ? '0' : '1';
+}
+
+function selectHormone(el, key) {
+  document.querySelectorAll('.h-card').forEach(c => c.classList.remove('sel','sage-sel','gold-sel'));
+  document.querySelectorAll('.interp-panel').forEach(p => p.classList.remove('show'));
+  el.classList.add('sel');
+  if (key === 'est')  el.classList.add('sage-sel');
+  if (key === 'andr') el.classList.add('gold-sel');
+  document.getElementById('interp-' + key).classList.add('show');
+  state.hormone = key;
+  const btn = document.getElementById('btn-h-next');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+  setTimeout(() => {
+    document.getElementById('interp-' + key).scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 100);
+}
+
+function toggleChip(el) { el.classList.toggle('on'); }
+
+function selectOne(el, groupId) {
+  document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function getChips(groupId) {
+  return Array.from(document.querySelectorAll('#' + groupId + ' .chip.on')).map(c => c.textContent.trim());
+}
+
+function submitAll() {
+  const email = document.getElementById('loi-email').value.trim();
+  const name  = document.getElementById('loi-name').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('loi-email').style.borderBottomColor = '#D4958A';
+    document.getElementById('loi-email').focus();
+    return;
+  }
+  state.appetite    = getChips('chips-appetite');
+  state.optimising  = document.getElementById('q2').value.trim();
+  state.context     = getChips('chips-context');
+  state.contextText = document.getElementById('q3').value.trim();
+  state.clinical    = getChips('chips-clinical')[0] || '';
+  state.device      = getChips('chips-device')[0] || 'None';
+  state.name        = name;
+  state.email       = email;
+  state.intent      = document.getElementById('loi-intent').checked;
+  state.time        = new Date().toISOString();
+  state.hormoneName = {prog:'Progesterone',est:'Estrogen',andr:'Androgens',cort:'Cortisol'}[state.hormone] || '';
+
+  const log = JSON.parse(localStorage.getItem('blueprint-log') || '[]');
+  log.push(state);
+  localStorage.setItem('blueprint-log', JSON.stringify(log));
+
+  const dest = USE_SHEETS ? SHEETS_URL : NOTION_URL;
+  if (dest && !dest.includes('YOUR_')) { window.open(dest, '_blank'); }
+
+  go('s-success');
+}
+
+function restart() {
+  state = { hormone:'', appetite:[], optimising:'', context:[], contextText:'', clinical:'', device:'', name:'', email:'', intent:false };
+  ['q2','q3','loi-name','loi-email'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('loi-intent').checked = false;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.h-card').forEach(c => c.classList.remove('sel','sage-sel','gold-sel'));
+  document.querySelectorAll('.interp-panel').forEach(p => p.classList.remove('show'));
+  document.getElementById('btn-h-next').style.opacity = '0.35';
+  document.getElementById('btn-h-next').style.pointerEvents = 'none';
+  go('s-welcome');
+}
+
+document.getElementById('progress-bar').style.opacity = '0';
+</script>
+</body>
+</html>
