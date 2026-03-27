@@ -355,7 +355,7 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
 
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="go('s-welcome')">Back</button>
-      <button class="btn btn-dark" id="btn-h-next" style="opacity:0.35;pointer-events:none" onclick="go('s-discovery')">This resonates →</button>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZPJwXDLD7WsKNClKM_6I7CQDW2uRQJ4mcdVWniH9_VAB3kA/viewform" target="_self" id="btn-h-next" class="btn btn-dark" style="opacity:0.35;pointer-events:none;text-decoration:none">This resonates →</a>
     </div>
   </div>
 </div>
@@ -490,7 +490,11 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
 // ══════════════════════════════════════════════════
 //  GOOGLE APPS SCRIPT CONFIG
 // ══════════════════════════════════════════════════
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJsV4k8HAEmF0C5hecnG35QC52f02VHXYvIj6iHVV99f5X3nPJKln3aA8A7QZVNVx1Vg/exec';
+const GOOGLE_FORM_SHORT = 'https://forms.gle/rX6FEJSnGWRmdvAo8';
+
+function openForm() {
+  window.open(GOOGLE_FORM_SHORT, '_blank');
+}
 // ══════════════════════════════════════════════════
 
 const SCREENS  = ['s-welcome','s-hormones','s-discovery','s-loi','s-success'];
@@ -540,11 +544,21 @@ function getChips(groupId) {
 
 async function submitToGoogleForm(s) {
   try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(s)
+    const params = new URLSearchParams({
+      name:        s.name,
+      email:       s.email,
+      hormoneName: s.hormoneName,
+      intent:      s.intent ? 'Yes' : 'No',
+      appetite:    (s.appetite || []).join(' | '),
+      optimising:  s.optimising,
+      context:     (s.context || []).join(' | '),
+      contextText: s.contextText,
+      clinical:    s.clinical,
+      device:      s.device
+    });
+    await fetch(SCRIPT_URL + '?' + params.toString(), {
+      method: 'GET',
+      mode: 'no-cors'
     });
   } catch(e) {
     console.log('Submission error:', e);
