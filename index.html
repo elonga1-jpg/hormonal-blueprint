@@ -488,22 +488,9 @@ input[type=range]{width:100%;accent-color:var(--blush);height:3px;cursor:pointer
 
 <script>
 // ══════════════════════════════════════════════════
-//  GOOGLE FORM CONFIG
+//  GOOGLE APPS SCRIPT CONFIG
 // ══════════════════════════════════════════════════
-const FORM_BASE = 'https://docs.google.com/forms/d/e/1FAIpQLSeZPJwXDLD7WsKNClKM_6I7CQDW2uRQJ4mcdVWniH9_VAB3kA/formResponse';
-const FIELDS = {
-  name:        'entry.1084751225',
-  email:       'entry.448229738',
-  hormone:     'entry.1188618265',
-  intent:      'entry.1630375945',
-  appetite:    'entry.699885414',
-  optimising:  'entry.1338450899',
-  context:     'entry.882118119',
-  contextText: 'entry.2052226709',
-  clinical:    'entry.590806347',
-  device:      'entry.250294453',
-  time:        'entry.1005031548'
-};
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJsV4k8HAEmF0C5hecnG35QC52f02VHXYvIj6iHVV99f5X3nPJKln3aA8A7QZVNVx1Vg/exec';
 // ══════════════════════════════════════════════════
 
 const SCREENS  = ['s-welcome','s-hormones','s-discovery','s-loi','s-success'];
@@ -552,32 +539,15 @@ function getChips(groupId) {
 }
 
 async function submitToGoogleForm(s) {
-  const now = new Date();
-  const timeStr = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
-
-  const body = new URLSearchParams({
-    [FIELDS.name]:        s.name,
-    [FIELDS.email]:       s.email,
-    [FIELDS.hormone]:     s.hormoneName,
-    [FIELDS.intent]:      s.intent ? 'Yes' : 'No',
-    [FIELDS.appetite]:    s.appetite.join(' | '),
-    [FIELDS.optimising]:  s.optimising,
-    [FIELDS.context]:     s.context.join(' | '),
-    [FIELDS.contextText]: s.contextText,
-    [FIELDS.clinical]:    s.clinical,
-    [FIELDS.device]:      s.device,
-    [FIELDS.time]:        timeStr
-  });
-
   try {
-    await fetch(FORM_BASE, {
+    await fetch(SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(s)
     });
   } catch(e) {
-    console.log('Form submit error:', e);
+    console.log('Submission error:', e);
   }
 }
 
